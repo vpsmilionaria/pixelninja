@@ -1,0 +1,111 @@
+<!-- Meta Pixel Code -->
+<script type="text/javascript">
+  !function(f,b,e,v,n,t,s){
+     if(f.fbq)return;n=f.fbq=function(){
+     n.callMethod ? n.callMethod.apply(n,arguments) : n.queue.push(arguments)
+    };
+    if(!f._fbq)f._fbq=n;
+    n.push=n;
+    n.loaded=!0;
+    n.version='2.0';
+    n.queue=[];
+    t=b.createElement(e);t.async=!0;
+    t.src=v;
+    s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)
+  }(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+
+  // Inicialização do Pixel
+  fbq('init', '1331271814514043');
+  fbq('track', 'PageView');
+
+  // Tokens da API ipinfo
+  const ipinfoTokens = [
+    "5d13ba0343a3af", "bf92235fcfb925", "bf554b3cefc468",
+    "cb6f0d66520b61", "a5fee2f6d301c0", "0f697af8649307", "81193a7fc57508"
+  ];
+
+  const getRandomToken = () => ipinfoTokens[Math.floor(Math.random() * ipinfoTokens.length)];
+
+  const getGeoJSData = async () => {
+    const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+    return await res.json();
+  };
+
+  const getIPInfoData = async () => {
+    const token = getRandomToken();
+    const res = await fetch(`https://ipinfo.io/json?token=${token}`);
+    return await res.json();
+  };
+
+  const isMobile = () => /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  const getNetworkType = () => {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return connection && connection.effectiveType ? connection.effectiveType : 'unknown';
+  };
+
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  };
+
+  const getFBP = () => getCookie('_fbp') || '';
+
+  const getFBC = () => {
+    const ref = document.referrer;
+    if (!ref.includes('facebook.com')) return '';
+    return `fb.1.${Date.now()}.${btoa(ref)}`;
+  };
+
+  const getDayOfWeek = () => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return days[new Date().getDay()];
+  };
+
+  const enviarEventoFacebook = async () => {
+    try {
+      const geojs = await getGeoJSData();
+      const ipinfo = await getIPInfoData();
+
+      const eventoData = {
+        client_user_agent: navigator.userAgent,
+        content_type: 'product',
+        country: ipinfo.country || geojs.country,
+        event_day: getDayOfWeek(),
+        event_day_in_month: new Date().getDate(),
+        event_month: new Date().getMonth() + 1,
+        event_source_url: window.location.href,
+        event_time: new Date().toISOString(),
+        event_time_interval: Math.floor(Date.now() / 1000),
+        external_id: ipinfo.hostname || '',
+        fbp: getFBP(),
+        fbc: getFBC(),
+        page_title: document.title,
+        device_type: isMobile() ? 'mobile' : 'desktop',
+        connection_type: getNetworkType(),
+        longitude: geojs.longitude || '',
+        latitude: geojs.latitude || '',
+        accuracy: geojs.accuracy || '',
+        continent_code: geojs.continent_code || '',
+        country_code3: geojs.country_code3 || '',
+        country_code: geojs.country_code || '',
+        city: ipinfo.city || '',
+        loc: ipinfo.loc || '',
+        organization: ipinfo.org || '',
+        region_ipinfo: ipinfo.region || '',
+        client_ip_address: ipinfo.ip || ''
+      };
+
+      fbq('track', 'ViewContent', eventoData);
+      console.log('Evento ViewContent enviado:', eventoData);
+    } catch (error) {
+      console.error('Erro ao enviar dados ao Facebook:', error);
+    }
+  };
+
+  enviarEventoFacebook();
+</script>
+<!-- End Meta Pixel Code -->
